@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+@theme {
+  --color-carbon-900: #0e0e0e;
+  --color-carbon-800: #1a1919;
+  --color-carbon-700: #262626;
+  
+  --color-neon-green: #39FF14;
+  --color-neon-green-light: #8eff71;
+  --color-neon-green-dark: #2ff801;
+  
+  --color-neon-cyan: #00eefc;
+
+  --font-grotesk: var(--font-space-grotesk);
+  --font-manrope: var(--font-manrope);
+}
+
+@layer base {
+  body {
+    background-color: var(--color-carbon-900);
+    color: #adaaaa;
+  }
+}
