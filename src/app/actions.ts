@@ -1,103 +1,136 @@
 "use server";
 
 import { z } from "zod";
-import { registrationSchema } from "@/lib/schema";
+import { tournamentRegistrationSchema, showmatchRegistrationSchema } from "@/lib/schema";
+import { createClient } from "@supabase/supabase-js";
+import { Resend } from "resend";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
-export async function submitRegistration(data: FormData) {
+// 1. Tournament Registration (5 Players + Team)
+export async function submitTournamentRegistration(data: FormData) {
   try {
-    // 1. Validate Form Data
-    const rawData = {
-      fullName: data.get("fullName"),
-      ign: data.get("ign"),
-      uid: data.get("uid"),
-      area: data.get("area"),
-      address: data.get("address"),
-      phoneNumber: data.get("phoneNumber"),
-      email: data.get("email"),
-      discordId: data.get("discordId"),
-      teamName: data.get("teamName"),
-    };
-
-    const validatedData = registrationSchema.parse(rawData);
+    const payloadStr = data.get("payload") as string;
+    if (!payloadStr) throw new Error("Invalid payload data.");
+    
+    const rawData = JSON.parse(payloadStr);
+    const validatedData = tournamentRegistrationSchema.parse(rawData);
+    
     const logoFile = data.get("teamLogo") as File;
+    if (!logoFile || logoFile.size === 0) return { success: false, error: "Team Logo is required." };
+    if (logoFile.size > MAX_FILE_SIZE) return { success: false, error: "Team Logo must be less than 5MB." };
+    if (!ACCEPTED_IMAGE_TYPES.includes(logoFile.type)) return { success: false, error: "Team Logo must be a valid image." };
 
-    if (!logoFile || logoFile.size === 0) {
-      return { success: false, error: "Team Logo is required." };
-    }
-    
-    if (logoFile.size > MAX_FILE_SIZE) {
-      return { success: false, error: "Team Logo must be less than 5MB." };
-    }
-    
-    if (!ACCEPTED_IMAGE_TYPES.includes(logoFile.type)) {
-      return { success: false, error: "Team Logo must be a valid image (JPEG, PNG, WEBP)." };
+    let logoUrl = "";
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseKey || supabaseUrl.includes("your-project-id")) {
+      throw new Error("Supabase credentials are not properly configured in the .env file.");
     }
 
-    // Since we don't have actual Supabase credentials, we will mock the backend logic here
-    // In a real scenario, this would look like:
-    /*
-      const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    const leaderUid = validatedData.players[0].uid;
+    const fileExt = logoFile.name.split('.').pop();
+    const fileName = `${leaderUid}-${Date.now()}.${fileExt}`;
+    
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('team-logos')
+      .upload(fileName, logoFile);
       
-      const fileExt = logoFile.name.split('.').pop();
-      const fileName = `${validatedData.uid}-${Date.now()}.${fileExt}`;
+    if (uploadError) throw new Error(`Failed to upload logo: ${uploadError.message}`);
+    
+    const { data: publicUrlData } = supabase.storage.from('team-logos').getPublicUrl(fileName);
+    logoUrl = publicUrlData.publicUrl;
+    
+    const leader = validatedData.players[0];
+    const teamMembers = validatedData.players.slice(1);
+    
+    const { error: insertError } = await supabase
+      .from('registrations')
+      .insert({
+        full_name: leader.fullName,
+        ign: leader.ign,
+        uid: leader.uid,
+        area: leader.area,
+        address: leader.address,
+        phone_number: leader.phoneNumber,
+        email: leader.email,
+        discord_id: leader.discordId,
+        team_name: validatedData.teamName,
+        team_logo_url: logoUrl,
+        team_members: teamMembers // JSONB column
+      });
       
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('team-logos')
-        .upload(fileName, logoFile);
-        
-      if (uploadError) throw new Error("Failed to upload logo.");
-      
-      const { data: publicUrlData } = supabase.storage
-        .from('team-logos')
-        .getPublicUrl(fileName);
-        
-      const logoUrl = publicUrlData.publicUrl;
-      
-      const { error: insertError } = await supabase
-        .from('registrations')
-        .insert({
-          full_name: validatedData.fullName,
-          ign: validatedData.ign,
-          uid: validatedData.uid,
-          area: validatedData.area,
-          address: validatedData.address,
-          phone_number: validatedData.phoneNumber,
-          email: validatedData.email,
-          discord_id: validatedData.discordId,
-          team_name: validatedData.teamName,
-          team_logo_url: logoUrl
-        });
-        
-      if (insertError) throw new Error("Failed to save registration.");
-      
-      // Send Resend Email
+    if (insertError) throw new Error(`Failed to save registration: ${insertError.message}`);
+
+    // Send Resend Email to Team Leader
+    if (process.env.RESEND_API_KEY) {
       const resend = new Resend(process.env.RESEND_API_KEY);
-      await resend.emails.send({
-        from: 'Oraimo x Free Fire <noreply@yourdomain.com>',
-        to: validatedData.email,
+      const { error: resendError } = await resend.emails.send({
+        from: 'Oraimo x Free Fire <onboarding@resend.dev>',
+        to: leader.email,
         subject: 'Registration Confirmed: Oraimo x Free Fire ZCS',
         html: `
           <div style="background-color: #0e0e0e; color: #fff; padding: 40px; font-family: sans-serif; text-align: center;">
             <h1 style="color: #39FF14; text-transform: uppercase;">Registration Confirmed</h1>
-            <p style="color: #adaaaa; font-size: 16px;">Hello <strong>${validatedData.ign}</strong>,</p>
+            <p style="color: #adaaaa; font-size: 16px;">Hello <strong>${leader.ign}</strong>,</p>
             <p style="color: #adaaaa; font-size: 16px;">Your registration for team <strong>${validatedData.teamName}</strong> has been successfully received.</p>
             <p style="color: #adaaaa; font-size: 16px;">Get ready for the ultimate showdown!</p>
           </div>
         `
       });
-    */
 
-    // Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+      if (resendError) throw new Error("Failed to send confirmation email.");
+    }
 
     return { success: true };
   } catch (error: any) {
-    if (error?.name === 'ZodError') {
-      return { success: false, error: error.errors[0].message };
+    if (error?.name === 'ZodError') return { success: false, error: error.errors[0].message };
+    return { success: false, error: error.message || "Something went wrong." };
+  }
+}
+
+// 2. Showmatch Registration (1 Player + Serial Number)
+export async function submitShowmatchRegistration(data: FormData) {
+  try {
+    const payloadStr = data.get("payload") as string;
+    if (!payloadStr) throw new Error("Invalid payload data.");
+    
+    const rawData = JSON.parse(payloadStr);
+    const validatedData = showmatchRegistrationSchema.parse(rawData);
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseKey || supabaseUrl.includes("your-project-id")) {
+      throw new Error("Supabase credentials are not properly configured in the .env file.");
     }
-    return { success: false, error: "Something went wrong during registration." };
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    const { error: insertError } = await supabase
+      .from('showmatch_registrations')
+      .insert({
+        full_name: validatedData.fullName,
+        ign: validatedData.ign,
+        uid: validatedData.uid,
+        area: validatedData.area,
+        address: validatedData.address,
+        phone_number: validatedData.phoneNumber,
+        email: validatedData.email,
+        discord_id: validatedData.discordId,
+        product_serial_number: validatedData.productSerialNumber
+      });
+      
+    if (insertError) throw new Error(`Failed to save showmatch registration: ${insertError.message}`);
+
+    // NO EMAIL SENT HERE per requirements
+    return { success: true };
+  } catch (error: any) {
+    if (error?.name === 'ZodError') return { success: false, error: error.errors[0].message };
+    return { success: false, error: error.message || "Something went wrong." };
   }
 }

@@ -1,12 +1,17 @@
 import RegistrationModal from "@/components/RegistrationModal";
+import ShowmatchModal from "@/components/ShowmatchModal";
+import Image from "next/image";
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-carbon-900 text-gray-300 overflow-x-hidden">
+    <main className="min-h-screen bg-carbon-900 text-gray-300 overflow-x-hidden relative">
+      {/* Cyber Grid Background */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#39FF1405_1px,transparent_1px),linear-gradient(to_bottom,#39FF1405_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none z-0"></div>
+
       {/* Top Navigation Shell */}
       <nav className="fixed top-0 w-full z-50 bg-carbon-900/80 backdrop-blur-md border-b border-carbon-700/50">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="text-neon-green font-grotesk text-2xl font-bold tracking-tighter uppercase">
+          <div className="text-neon-green font-grotesk text-2xl font-black tracking-tighter uppercase drop-shadow-[0_0_10px_rgba(57,255,20,0.5)]">
             Oraimo <span className="text-white">x</span> Free Fire
           </div>
         </div>
@@ -30,40 +35,73 @@ export default function Home() {
                   Register Now
                 </button>
               </RegistrationModal>
-              <button className="px-8 py-4 bg-carbon-800 border border-neon-green text-white font-grotesk font-bold uppercase tracking-widest hover:bg-neon-green/10 transition-colors duration-300 cursor-pointer">
-                Play Showmatch
-              </button>
+              <ShowmatchModal>
+                <button className="px-8 py-4 bg-carbon-800 border border-neon-green text-white font-grotesk font-bold uppercase tracking-widest hover:bg-neon-green/10 transition-colors duration-300 cursor-pointer">
+                  Play Showmatch
+                </button>
+              </ShowmatchModal>
             </div>
           </div>
           
-          <div className="relative aspect-[4/5] lg:aspect-square w-full max-w-lg mx-auto">
-            {/* Image Placeholder */}
-            <div className="absolute inset-0 bg-carbon-700 rounded-2xl border border-carbon-700 flex items-center justify-center shadow-2xl overflow-hidden group">
-              <div className="absolute inset-0 bg-gradient-to-tr from-carbon-900/80 to-transparent"></div>
-              <div className="text-neon-green font-grotesk text-2xl font-bold uppercase tracking-widest z-10 opacity-70 group-hover:opacity-100 transition-opacity">
-                Free Fire Character
-              </div>
-              {/* Decorative elements */}
-              <div className="absolute top-0 right-0 w-32 h-32 bg-neon-green/10 blur-[50px] rounded-full"></div>
-              <div className="absolute bottom-0 left-0 w-40 h-40 bg-neon-cyan/10 blur-[60px] rounded-full"></div>
+          <div className="relative aspect-[4/5] lg:aspect-square w-full max-w-lg mx-auto pointer-events-none z-0">
+            {/* Free Fire Characters */}
+            <div className="absolute inset-0 flex items-end justify-center group overflow-visible">
+              {/* Decorative elements behind */}
+              <div className="absolute inset-0 bg-carbon-900/40 rounded-3xl blur-[40px] -z-10 transition-colors"></div>
+              <div className="absolute top-10 right-0 w-48 h-48 bg-neon-green/30 blur-[60px] rounded-full -z-10"></div>
+              <div className="absolute bottom-10 left-0 w-48 h-48 bg-neon-cyan/30 blur-[60px] rounded-full -z-10"></div>
+              
+              <Image 
+                src="/hayato.png" 
+                alt="Hayato" 
+                fill
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                priority
+                className="object-contain object-bottom -translate-x-12 sm:-translate-x-16 scale-95 drop-shadow-[0_0_40px_rgba(255,50,50,0.4)] z-10"
+              />
+              <Image 
+                src="/moco.png" 
+                alt="Moco" 
+                fill
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                priority
+                className="object-contain object-bottom translate-x-12 sm:translate-x-16 scale-105 drop-shadow-[0_0_40px_rgba(57,255,20,0.4)] z-20"
+              />
             </div>
           </div>
         </div>
       </section>
 
       {/* 2. Buy and Win Section */}
-      <section className="py-24 px-6 bg-carbon-800 relative border-y border-carbon-700/50">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-center font-grotesk text-4xl md:text-5xl font-black uppercase text-white mb-16">
-            Buy and Win
-          </h2>
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {[1, 2].map((i) => (
-              <div key={i} className="aspect-[4/3] bg-carbon-900 rounded-3xl border border-carbon-700 hover:border-neon-cyan/50 hover:shadow-[0_0_30px_rgba(0,238,252,0.15)] transition-all duration-500 flex items-center justify-center group relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-carbon-800/50 to-transparent"></div>
-                <span className="text-neon-cyan/70 font-grotesk text-xl font-bold uppercase tracking-wider group-hover:text-neon-cyan transition-colors z-10">
-                  Oraimo Product
-                </span>
+      <section className="py-24 px-6 bg-carbon-800 relative border-y border-carbon-700/50 overflow-hidden z-10">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-neon-green/5 blur-[100px] rounded-full -z-10"></div>
+        <div className="max-w-7xl mx-auto relative z-10">
+          <div className="text-center mb-16 space-y-4">
+            <h2 className="font-grotesk text-5xl md:text-6xl font-black uppercase text-transparent bg-clip-text bg-gradient-to-r from-neon-green via-white to-neon-cyan drop-shadow-[0_0_10px_rgba(57,255,20,0.3)]">
+              Oraimo Elite Gear
+            </h2>
+            <p className="text-xl text-gray-400 font-grotesk tracking-widest uppercase">Equip the power. Dominate the game.</p>
+          </div>
+          <div className="grid md:grid-cols-2 gap-12 max-w-5xl mx-auto">
+            {[
+              { src: "/hayato_watch.png", title: "Hayato Edition", color: "from-red-500/20" },
+              { src: "/moco_watch.png", title: "Moco Edition", color: "from-neon-green/20" }
+            ].map((product, i) => (
+              <div key={i} className="relative aspect-square bg-carbon-900/80 rounded-[40px] border border-carbon-700 hover:border-neon-green hover:shadow-[0_0_40px_rgba(57,255,20,0.2)] transition-all duration-500 group overflow-hidden">
+                <div className={`absolute inset-0 bg-gradient-to-br ${product.color} to-transparent opacity-50`}></div>
+                
+                <Image 
+                  src={product.src}
+                  alt={product.title}
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                  className="object-contain p-8 group-hover:scale-110 transition-transform duration-700 z-10 drop-shadow-[0_20px_30px_rgba(0,0,0,0.8)]"
+                />
+                
+                <div className="absolute bottom-0 inset-x-0 p-8 bg-gradient-to-t from-carbon-900 via-carbon-900/80 to-transparent z-20 translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                  <h3 className="text-3xl font-grotesk font-black text-white uppercase italic">{product.title}</h3>
+                  <p className="text-neon-green font-bold uppercase tracking-wider text-sm mt-2">Limited Edition</p>
+                </div>
               </div>
             ))}
           </div>
